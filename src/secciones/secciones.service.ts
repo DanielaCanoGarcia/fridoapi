@@ -7,7 +7,6 @@ import { UpdateSeccionDto } from './dto/update-seccion.dto';
 export class SeccionesService {
   constructor(private prisma: PrismaService) {}
 
-  // Listar secciones por lectura, ordenadas
   async listarPorLectura(idLectura: number) {
     return this.prisma.secciones.findMany({
       where: { id_lecturas: idLectura },
@@ -15,9 +14,7 @@ export class SeccionesService {
     });
   }
 
-  // Crear sección: solo tutor propietario de la lectura puede crear
   async crearSeccion(idUsuario: number, dto: CreateSeccionDto) {
-    // Verificar que la lectura existe y obtener su posted_by
     const lectura = await this.prisma.lecturas.findUnique({
       where: { id_lecturas: dto.id_lecturas },
       select: { posted_by: true },
@@ -28,7 +25,6 @@ export class SeccionesService {
       throw new ForbiddenException('No tienes permisos para agregar secciones a esta lectura');
     }
 
-    // Opcional: validar order_index no duplicado dentro de la misma lectura
     const existsIndex = await this.prisma.secciones.findFirst({
       where: { id_lecturas: dto.id_lecturas, order_index: dto.order_index },
     });
@@ -46,7 +42,6 @@ export class SeccionesService {
     });
   }
 
-  // Obtener una sección por id
   async obtenerSeccion(idSeccion: number) {
     const seccion = await this.prisma.secciones.findUnique({
       where: { id_secciones: idSeccion },
@@ -55,7 +50,6 @@ export class SeccionesService {
     return seccion;
   }
 
-  // Actualizar sección (solo tutor dueño de la lectura)
   async actualizarSeccion(idUsuario: number, idSeccion: number, dto: UpdateSeccionDto) {
     const seccion = await this.prisma.secciones.findUnique({
       where: { id_secciones: idSeccion },
@@ -67,7 +61,6 @@ export class SeccionesService {
       throw new ForbiddenException('No tienes permisos para editar esta sección');
     }
 
-    // Si se cambia order_index, opcional revisar duplicados
     if (dto.order_index !== undefined) {
       const conflict = await this.prisma.secciones.findFirst({
         where: {
@@ -91,7 +84,6 @@ export class SeccionesService {
     });
   }
 
-  // Eliminar sección (solo tutor dueño)
   async eliminarSeccion(idUsuario: number, idSeccion: number) {
     const seccion = await this.prisma.secciones.findUnique({
       where: { id_secciones: idSeccion },

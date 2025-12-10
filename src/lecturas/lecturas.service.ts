@@ -7,7 +7,6 @@ import { UpdateLecturaDto } from './dto/update-lectura.dto';
 export class LecturasService {
   constructor(private prisma: PrismaService) {}
 
-  // Crear lectura asociada al tutor (posted_by)
   async crearLectura(idTutor: number, dto: CreateLecturaDto) {
     return this.prisma.lecturas.create({
       data: {
@@ -19,7 +18,6 @@ export class LecturasService {
     });
   }
 
-  // Listar todas las lecturas (visibles por todos los usuarios autenticados)
   async listarTodas() {
     return this.prisma.lecturas.findMany({
       orderBy: { creado_en: 'desc' },
@@ -31,7 +29,6 @@ export class LecturasService {
     });
   }
 
-  // Obtener una lectura por id (cualquiera autenticado puede verla)
   async obtenerLectura(idLectura: number) {
     const lectura = await this.prisma.lecturas.findUnique({
       where: { id_lecturas: idLectura },
@@ -48,7 +45,6 @@ export class LecturasService {
     return lectura;
   }
 
-  // Actualizar => solo si el tutor que pide la acción es el creador (posted_by)
   async actualizarLectura(idTutor: number, idLectura: number, dto: UpdateLecturaDto) {
     const lectura = await this.prisma.lecturas.findUnique({ where: { id_lecturas: idLectura } });
     if (!lectura) throw new NotFoundException('Lectura no encontrada');
@@ -65,7 +61,6 @@ export class LecturasService {
     });
   }
 
-  // Eliminar => solo si el tutor creador
   async eliminarLectura(idTutor: number, idLectura: number) {
     const lectura = await this.prisma.lecturas.findUnique({ where: { id_lecturas: idLectura } });
     if (!lectura) throw new NotFoundException('Lectura no encontrada');

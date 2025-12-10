@@ -7,9 +7,7 @@ import { UpdateAlumnoDto } from './dto/update-alumno.dto';
 export class AlumnoService {
   constructor(private prisma: PrismaService) {}
 
-  // Crear alumno asociado al tutor (idUsuario = id del tutor desde el JWT)
   async crearAlumno(idUsuario: number, dto: CreateAlumnoDto) {
-    // Opcional: prevenir nombres repetidos por tutor
     const existing = await this.prisma.alumno.findFirst({
       where: { id_usuario: idUsuario, nombre_usuario: dto.nombre_usuario },
     });
@@ -26,7 +24,6 @@ export class AlumnoService {
     });
   }
 
-  // Listar alumnos del tutor
   async listarAlumnosDelTutor(idUsuario: number) {
     return this.prisma.alumno.findMany({
       where: { id_usuario: idUsuario },
@@ -34,7 +31,6 @@ export class AlumnoService {
     });
   }
 
-  // Obtener alumno por id si pertenece al tutor
   async obtenerAlumnoPorId(idUsuario: number, idAlumno: number) {
     const alumno = await this.prisma.alumno.findUnique({
       where: { id_alumno: idAlumno },
@@ -44,7 +40,6 @@ export class AlumnoService {
     return alumno;
   }
 
-  // Actualizar alumno (solo si pertenece al tutor)
   async actualizarAlumno(idUsuario: number, idAlumno: number, dto: UpdateAlumnoDto) {
     const alumno = await this.prisma.alumno.findUnique({ where: { id_alumno: idAlumno } });
     if (!alumno) throw new NotFoundException('Alumno no encontrado');
@@ -59,7 +54,6 @@ export class AlumnoService {
     });
   }
 
-  // Eliminar alumno (solo si pertenece al tutor)
   async eliminarAlumno(idUsuario: number, idAlumno: number) {
     const alumno = await this.prisma.alumno.findUnique({ where: { id_alumno: idAlumno } });
     if (!alumno) throw new NotFoundException('Alumno no encontrado');
