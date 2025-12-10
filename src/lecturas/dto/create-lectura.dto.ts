@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
 
 export class CreateLecturaDto {
   @IsString()
@@ -9,7 +9,7 @@ export class CreateLecturaDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(1000)
-  portada_url: string;
+  portada_url: string; 
 
   @IsString()
   @IsNotEmpty()
