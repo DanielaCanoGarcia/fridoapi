@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model usuario {
+  id_usuario   Int       @id @default(autoincrement())
+  nombre       String
+  apellido_pat String
+  correo       String    @unique
+  rol          String
+  usuario      String
+  contraseña   String
+  creado_en    DateTime  @default(now())
+
+  alumnos      alumno[]
+  lecturas     lecturas[]
+}
+
+model alumno {
+  id_alumno       Int       @id @default(autoincrement())
+  id_usuario      Int
+  nombre_usuario  String    @unique
+  avatar_url      String
+  creado_en       DateTime  @default(now())
+
+  usuario         usuario   @relation(fields: [id_usuario], references: [id_usuario])
+  historial       alumno_lectura[]
+}
+
+model lecturas {
+  id_lecturas   Int       @id @default(autoincrement())
+  titulo        String
+  portada_url   String
+  nivel         String
+  posted_by     Int
+  creado_en     DateTime @default(now())
+
+  usuario       usuario  @relation(fields: [posted_by], references: [id_usuario])
+  secciones     secciones[]
+  preguntas     preguntas[]
+  historial     alumno_lectura[]
+}
+
+model secciones {
+  id_secciones   Int      @id @default(autoincrement())
+  id_lecturas    Int
+  texto          String
+  ilustracion_url String
+  order_index    Int
+
+  lectura        lecturas @relation(fields: [id_lecturas], references: [id_lecturas])
+}
+
+model preguntas {
+  id_pregunta   Int      @id @default(autoincrement())
+  id_lecturas   Int
+  pregunta      String
+  orden         Int
+
+  lectura       lecturas @relation(fields: [id_lecturas], references: [id_lecturas])
+  opciones      opciones_respuesta[]
+  respuestas    respuestas_alumno[]
+}
+
+model opciones_respuesta {
+  id_opcion     Int      @id @default(autoincrement())
+  id_pregunta   Int
+  opcion        String
+  es_correcta   Boolean
+
+  pregunta      preguntas @relation(fields: [id_pregunta], references: [id_pregunta])
+  respuestas    respuestas_alumno[]
+}
+
+model alumno_lectura {
+  id_alumno_lectura Int      @id @default(autoincrement())
+  id_alumno         Int
+  id_lectura        Int
+  iniciado_en       DateTime? 
+  completado_en     DateTime?
+  completado        Boolean   @default(false)
+  correctas         Int       @default(0)
+  total_preguntas   Int       @default(0)
+  comprension       Float? 
+
+  alumno            alumno   @relation(fields: [id_alumno], references: [id_alumno])
+  lectura           lecturas @relation(fields: [id_lectura], references: [id_lecturas])
+  respuestas        respuestas_alumno[]
+}
+
+model respuestas_alumno {
+  id_respuestas_alumno Int     @id @default(autoincrement())
+  id_alumno_lectura    Int
+  id_pregunta          Int
+  id_opcion            Int
+  es_correcta          Boolean
+  respondido_en        DateTime @default(now())
+
+  alumno_lectura alumno_lectura @relation(fields: [id_alumno_lectura], references: [id_alumno_lectura])
+  pregunta       preguntas       @relation(fields: [id_pregunta], references: [id_pregunta])
+  opcion         opciones_respuesta @relation(fields: [id_opcion], references: [id_opcion])
+}
