@@ -1,4 +1,39 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateLecturaDto } from './create-lectura.dto';
+import {
+  IsOptional,
+  IsString,
+  IsArray,
+  ValidateNested,
+  IsInt,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class UpdateLecturaDto extends PartialType(CreateLecturaDto) {}
+class UpdateSeccionDto {
+  @IsString()
+  texto: string;
+
+  @IsString()
+  ilustracion_url: string;
+
+  @IsInt()
+  order_index: number;
+}
+
+export class UpdateLecturaDto {
+  @IsOptional()
+  @IsString()
+  titulo?: string;
+
+  @IsOptional()
+  @IsString()
+  nivel?: string;
+
+  @IsOptional()
+  @IsString()
+  portada_url?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UpdateSeccionDto)
+  secciones?: UpdateSeccionDto[];
+}

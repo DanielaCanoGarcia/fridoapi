@@ -8,6 +8,10 @@ import { AuthModule } from './auth/auth.module';
 import { AlumnoModule } from './alumno/alumno.module';
 import { LecturasModule } from './lecturas/lecturas.module';
 import { SeccionesModule } from './secciones/secciones.module';
+import { PreguntasModule } from './preguntas/preguntas.module';
+import { OpcionesRespuestasModule } from './opciones-respuestas/opciones-respuestas.module';
+import { AlumnoLecturaModule } from './alumno-lectura/alumno-lectura.module';
+import { RespuestasAlumnoModule } from './respuesta-alumno/respuesta-alumno.module';
 
 @Module({
   imports: [
@@ -17,7 +21,11 @@ import { SeccionesModule } from './secciones/secciones.module';
     AuthModule,
     AlumnoModule,
     LecturasModule,
-    SeccionesModule
+    SeccionesModule,
+    PreguntasModule,
+    OpcionesRespuestasModule,
+    AlumnoLecturaModule,
+    RespuestasAlumnoModule
   ],
   controllers: [AppController],
   providers: [AppService],

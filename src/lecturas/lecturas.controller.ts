@@ -26,7 +26,7 @@ export class LecturasController {
   @Roles('tutor')
   crear(@Req() req: any, @Body() dto: CreateLecturaDto) {
     const idTutor = req.user.id ?? req.user.sub;
-    return this.lecturasService.crearLectura(Number(idTutor), dto);
+    return this.lecturasService.crear(Number(idTutor), dto);
   }
 
   @Get()
