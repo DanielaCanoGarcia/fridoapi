@@ -155,17 +155,14 @@ export class LecturasService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // 1️⃣ Eliminar secciones
       await tx.secciones.deleteMany({
         where: { id_lecturas: idLectura },
       });
 
-      // 2️⃣ Eliminar preguntas (si existen)
       await tx.preguntas.deleteMany({
         where: { id_lecturas: idLectura },
       });
 
-      // 3️⃣ Eliminar lectura
       return tx.lecturas.delete({
         where: { id_lecturas: idLectura },
       });
