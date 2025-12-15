@@ -88,27 +88,6 @@ export class LecturasService {
     });
   }
 
-  async listarPorTutor(idTutor: number) {
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { id_usuario: idTutor },
-    });
-
-    if (!usuario || usuario.rol !== 'tutor') {
-      throw new ForbiddenException('Solo los tutores pueden ver sus lecturas');
-    }
-
-    return this.prisma.lecturas.findMany({
-      where: { posted_by: idTutor },
-      orderBy: { creado_en: 'desc' },
-      include: {
-        usuario: {
-          select: { id_usuario: true, nombre: true, apellido_pat: true, correo: true },
-        },
-      },
-    });
-  }
-
-
   async obtenerLectura(idLectura: number) {
   const lectura = await this.prisma.lecturas.findUnique({
     where: { id_lecturas: idLectura },

@@ -34,13 +34,6 @@ export class LecturasController {
     return this.lecturasService.listarTodas();
   }
 
-  @Get('mis-lecturas')
-  async listarMisLecturas(@Req() req) {
-    const idTutor = req.user.id_usuario;
-    return this.lecturasService.listarPorTutor(idTutor);
-  }
-
-
   @Get(':id')
   obtener(@Param('id', ParseIntPipe) id: number) {
     return this.lecturasService.obtenerLectura(id);
