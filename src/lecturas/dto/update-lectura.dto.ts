@@ -1,10 +1,4 @@
-import {
-  IsOptional,
-  IsString,
-  IsArray,
-  ValidateNested,
-  IsInt,
-} from 'class-validator';
+import { IsOptional, IsString, IsArray, ValidateNested, IsInt, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class UpdateSeccionDto {
@@ -16,6 +10,27 @@ class UpdateSeccionDto {
 
   @IsInt()
   order_index: number;
+}
+
+class UpdateOpcionDto {
+  @IsString()
+  opcion: string;
+
+  @IsBoolean()
+  es_correcta: boolean;
+}
+
+class UpdatePreguntaDto {
+  @IsString()
+  pregunta: string;
+
+  @IsInt()
+  orden: number;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UpdateOpcionDto)
+  opciones: UpdateOpcionDto[];
 }
 
 export class UpdateLecturaDto {
@@ -36,4 +51,10 @@ export class UpdateLecturaDto {
   @ValidateNested({ each: true })
   @Type(() => UpdateSeccionDto)
   secciones?: UpdateSeccionDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UpdatePreguntaDto)
+  preguntas?: UpdatePreguntaDto[];
 }

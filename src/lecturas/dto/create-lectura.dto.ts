@@ -1,4 +1,4 @@
-import { IsString, IsArray, ValidateNested, IsInt } from 'class-validator';
+import { IsString, IsArray, ValidateNested, IsInt, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class CreateLecturaSeccionDto {
@@ -10,6 +10,27 @@ class CreateLecturaSeccionDto {
 
   @IsInt()
   order_index: number;
+}
+
+class CreateLecturaOpcionDto {
+  @IsString()
+  opcion: string;
+
+  @IsBoolean()
+  es_correcta: boolean;
+}
+
+class CreateLecturaPreguntaDto {
+  @IsString()
+  pregunta: string;
+
+  @IsInt()
+  orden: number;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateLecturaOpcionDto)
+  opciones: CreateLecturaOpcionDto[];
 }
 
 export class CreateLecturaDto {
@@ -26,4 +47,9 @@ export class CreateLecturaDto {
   @ValidateNested({ each: true })
   @Type(() => CreateLecturaSeccionDto)
   secciones: CreateLecturaSeccionDto[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateLecturaPreguntaDto)
+  preguntas: CreateLecturaPreguntaDto[];
 }

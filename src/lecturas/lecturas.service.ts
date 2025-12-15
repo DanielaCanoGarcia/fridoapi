@@ -8,7 +8,6 @@ export class LecturasService {
   constructor(private prisma: PrismaService) {}
 
   async crear(idUsuario: number, dto: CreateLecturaDto) {
-    // 1️⃣ Validación de rol (solo tutor)
     const usuario = await this.prisma.usuario.findUnique({
       where: { id_usuario: idUsuario },
     });
@@ -17,9 +16,8 @@ export class LecturasService {
       throw new ForbiddenException('Solo los tutores pueden crear lecturas');
     }
 
-    // 2️⃣ Transacción
     return this.prisma.$transaction(async (tx) => {
-      // A. Crear lectura
+      // Crear lectura
       const lectura = await tx.lecturas.create({
         data: {
           titulo: dto.titulo,
@@ -29,7 +27,7 @@ export class LecturasService {
         },
       });
 
-      // B. Crear secciones
+      // Crear secciones
       if (dto.secciones?.length > 0) {
         await tx.secciones.createMany({
           data: dto.secciones.map((sec) => ({
@@ -41,17 +39,43 @@ export class LecturasService {
         });
       }
 
-      // C. Devolver lectura + secciones
+      // Crear preguntas + opciones
+      if (dto.preguntas?.length > 0) {
+        for (const [index, pregunta] of dto.preguntas.entries()) {
+          const nuevaPregunta = await tx.preguntas.create({
+            data: {
+              id_lecturas: lectura.id_lecturas,
+              pregunta: pregunta.pregunta,
+              orden: index + 1,
+            },
+          });
+
+          if (pregunta.opciones?.length > 0) {
+            await tx.opciones_respuesta.createMany({
+              data: pregunta.opciones.map((op) => ({
+                id_pregunta: nuevaPregunta.id_pregunta,
+                opcion: op.opcion,
+                es_correcta: op.es_correcta,
+              })),
+            });
+          }
+        }
+      }
+
+      // Devolver lectura completa con secciones y preguntas+opciones
       return tx.lecturas.findUnique({
         where: { id_lecturas: lectura.id_lecturas },
         include: {
-          secciones: {
-            orderBy: { order_index: 'asc' },
+          secciones: { orderBy: { order_index: 'asc' } },
+          preguntas: {
+            orderBy: { orden: 'asc' },
+            include: { opciones: true },
           },
         },
       });
     });
   }
+
 
   async listarTodas() {
     return this.prisma.lecturas.findMany({
@@ -65,82 +89,111 @@ export class LecturasService {
   }
 
   async obtenerLectura(idLectura: number) {
-    const lectura = await this.prisma.lecturas.findUnique({
-      where: { id_lecturas: idLectura },
-      include: {
-        usuario: {
-          select: { id_usuario: true, nombre: true, apellido_pat: true, correo: true },
-        },
-        secciones: {
-          orderBy: { order_index: 'asc' },
-        },
+  const lectura = await this.prisma.lecturas.findUnique({
+    where: { id_lecturas: idLectura },
+    include: {
+      usuario: {
+        select: { id_usuario: true, nombre: true, apellido_pat: true, correo: true },
       },
-    });
-    if (!lectura) throw new NotFoundException('Lectura no encontrada');
-    return lectura;
-  }
+      secciones: {
+        orderBy: { order_index: 'asc' },
+      },
+      preguntas: {
+        orderBy: { orden: 'asc' },
+        include: { opciones: true }
+      },
+    },
+  });
+  if (!lectura) throw new NotFoundException('Lectura no encontrada');
+  return lectura;
+}
+
 
   async actualizarLectura(
-    idTutor: number,
-    idLectura: number,
-    dto: UpdateLecturaDto,
-  ) {
-    const lectura = await this.prisma.lecturas.findUnique({
+  idTutor: number,
+  idLectura: number,
+  dto: UpdateLecturaDto,
+) {
+  const lectura = await this.prisma.lecturas.findUnique({
+    where: { id_lecturas: idLectura },
+  });
+
+  if (!lectura) throw new NotFoundException('Lectura no encontrada');
+  if (lectura.posted_by !== idTutor)
+    throw new ForbiddenException('No puedes editar una lectura que no creaste');
+
+  return this.prisma.$transaction(async (tx) => {
+    // Actualizar datos básicos
+    await tx.lecturas.update({
       where: { id_lecturas: idLectura },
+      data: {
+        titulo: dto.titulo ?? lectura.titulo,
+        nivel: dto.nivel ?? lectura.nivel,
+        portada_url: dto.portada_url ?? lectura.portada_url,
+      },
     });
 
-    if (!lectura) {
-      throw new NotFoundException('Lectura no encontrada');
+    // Actualizar secciones
+    if (dto.secciones) {
+      await tx.secciones.deleteMany({ where: { id_lecturas: idLectura } });
+      if (dto.secciones.length > 0) {
+        await tx.secciones.createMany({
+          data: dto.secciones.map((sec) => ({
+            id_lecturas: idLectura,
+            texto: sec.texto,
+            ilustracion_url: sec.ilustracion_url,
+            order_index: sec.order_index,
+          })),
+        });
+      }
     }
 
-    if (lectura.posted_by !== idTutor) {
-      throw new ForbiddenException(
-        'No puedes editar una lectura que no creaste',
-      );
-    }
-
-    return this.prisma.$transaction(async (tx) => {
-      // 1️⃣ Actualizar lectura
-      await tx.lecturas.update({
-        where: { id_lecturas: idLectura },
-        data: {
-          titulo: dto.titulo ?? lectura.titulo,
-          nivel: dto.nivel ?? lectura.nivel,
-          portada_url: dto.portada_url ?? lectura.portada_url,
-        },
+    // Actualizar preguntas y opciones
+    if (dto.preguntas) {
+      // borrar opciones ligadas a las preguntas de esta lectura
+      await tx.opciones_respuesta.deleteMany({
+        where: { pregunta: { id_lecturas: idLectura } },
       });
 
-      // 2️⃣ Si vienen secciones → borrar e insertar
-      if (dto.secciones) {
-        // borrar secciones anteriores
-        await tx.secciones.deleteMany({
-          where: { id_lecturas: idLectura },
+      // borrar preguntas anteriores
+      await tx.preguntas.deleteMany({ where: { id_lecturas: idLectura } });
+
+      // crear nuevas preguntas y opciones
+      for (const [index, preg] of dto.preguntas.entries()) {
+        const nuevaPregunta = await tx.preguntas.create({
+          data: {
+            id_lecturas: idLectura,
+            pregunta: preg.pregunta,
+            orden: index + 1,
+          },
         });
 
-        // crear nuevas secciones
-        if (dto.secciones.length > 0) {
-          await tx.secciones.createMany({
-            data: dto.secciones.map((sec) => ({
-              id_lecturas: idLectura,
-              texto: sec.texto,
-              ilustracion_url: sec.ilustracion_url,
-              order_index: sec.order_index,
+        if (preg.opciones?.length > 0) {
+          await tx.opciones_respuesta.createMany({
+            data: preg.opciones.map((op) => ({
+              id_pregunta: nuevaPregunta.id_pregunta,
+              opcion: op.opcion,
+              es_correcta: op.es_correcta,
             })),
           });
         }
       }
+    }
 
-      // 3️⃣ devolver lectura completa
-      return tx.lecturas.findUnique({
-        where: { id_lecturas: idLectura },
-        include: {
-          secciones: {
-            orderBy: { order_index: 'asc' },
-          },
+    // Devolver lectura completa
+    return tx.lecturas.findUnique({
+      where: { id_lecturas: idLectura },
+      include: {
+        secciones: { orderBy: { order_index: 'asc' } },
+        preguntas: {
+          orderBy: { orden: 'asc' },
+          include: { opciones: true },
         },
-      });
+      },
     });
-  }
+  });
+}
+
 
 
   async eliminarLectura(idTutor: number, idLectura: number) {
