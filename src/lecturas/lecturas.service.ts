@@ -197,29 +197,32 @@ export class LecturasService {
 
 
   async eliminarLectura(idTutor: number, idLectura: number) {
-    const lectura = await this.prisma.lecturas.findUnique({
+  const lectura = await this.prisma.lecturas.findUnique({
+    where: { id_lecturas: idLectura },
+  });
+
+  if (!lectura) throw new NotFoundException('Lectura no encontrada');
+  if (lectura.posted_by !== idTutor)
+    throw new ForbiddenException('No puedes eliminar una lectura que no creaste');
+
+  return this.prisma.$transaction(async (tx) => {
+    await tx.opciones_respuesta.deleteMany({
+      where: { pregunta: { id_lecturas: idLectura } },
+    });
+
+    await tx.preguntas.deleteMany({
       where: { id_lecturas: idLectura },
     });
 
-    if (!lectura) throw new NotFoundException('Lectura no encontrada');
-
-    if (lectura.posted_by !== idTutor) {
-      throw new ForbiddenException('No puedes eliminar una lectura que no creaste');
-    }
-
-    return this.prisma.$transaction(async (tx) => {
-      await tx.secciones.deleteMany({
-        where: { id_lecturas: idLectura },
-      });
-
-      await tx.preguntas.deleteMany({
-        where: { id_lecturas: idLectura },
-      });
-
-      return tx.lecturas.delete({
-        where: { id_lecturas: idLectura },
-      });
+    await tx.secciones.deleteMany({
+      where: { id_lecturas: idLectura },
     });
-  }
+
+    return tx.lecturas.delete({
+      where: { id_lecturas: idLectura },
+    });
+  });
+}
+
 
 }
