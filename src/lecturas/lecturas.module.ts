@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { LecturasService } from './lecturas.service';
 import { LecturasController } from './lecturas.controller';
-import { PrismaModule } from '../prisma/prisma.module'; // importa si tu PrismaModule NO es global
+import { PrismaModule } from '../prisma/prisma.module'; 
 
 @Module({
   imports: [PrismaModule],
